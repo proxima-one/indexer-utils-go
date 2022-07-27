@@ -65,7 +65,7 @@ func Run(grpcAddress, port, protoFileName string, protoFileFolder fs.FS,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if strings.HasPrefix(r.URL.Path, "/api") {
 				gwmux.ServeHTTP(w, r)
-			} else if r.URL.Path == "/schema.proto" {
+			} else if r.URL.Path == "/proto/schema.json" {
 				r.URL.Path = "/" + protoFileName
 				protoFileHandler.ServeHTTP(w, r)
 			} else {
