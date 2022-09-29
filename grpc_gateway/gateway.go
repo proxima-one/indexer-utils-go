@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"google.golang.org/grpc/credentials/insecure"
 	"io/fs"
+	"log"
 	"mime"
 	"net/http"
 	"strings"
@@ -75,6 +76,6 @@ func Run(grpcAddress, port, protoFileName string, protoFileFolder fs.FS,
 		}),
 	}
 
-	println("Serving gRPC-Gateway and OpenAPI Documentation on http://", gatewayAddr)
-	return fmt.Errorf("serving gRPC-Gateway server: %w", gwServer.ListenAndServe())
+	log.Println("Serving gRPC-Gateway and OpenAPI Documentation on http://", gatewayAddr)
+	return fmt.Errorf("serving gRPC-Gateway server error: %w", gwServer.ListenAndServe())
 }
