@@ -8,6 +8,7 @@ import (
 )
 
 func StartGrpcMetrics(serv *grpc.Server, port string) error {
+	grpcPrometheus.EnableHandlingTimeHistogram()
 	grpcPrometheus.Register(serv)
 	http.Handle("/metrics", promhttp.Handler())
 	return http.ListenAndServe(":"+port, nil)
