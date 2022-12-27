@@ -44,7 +44,7 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval, streamMetad
 		t := table.NewWriter()
 		t.SetStyle(table.StyleRounded)
 		t.SetOutputMirror(logger.file)
-		t.AppendHeader(table.Row{"Stream id", "Current Timestamp", "Avg Speed", "Speed", "Processed", "Remaining"})
+		t.AppendHeader(table.Row{"Stream id", "Height", "Current Timestamp", "Avg Speed", "Speed", "Processed", "Remaining"})
 
 		log := time.Tick(logInterval)
 		updateMeta := time.Tick(streamMetadataUpdateInterval)
@@ -66,15 +66,21 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval, streamMetad
 					processedPercent := ""
 					remainingTime := ""
 					if data.lastOffset != nil {
-						processedPercent = fmt.Sprintf("%.2f%%",
-							float32(data.lastProcessedEvent.Offset.Height)/float32(data.lastOffset.Height)*100.,
-						)
-						remainingTime = time.Duration(
-							int64(time.Second) * (data.lastOffset.Height - data.lastProcessedEvent.Offset.Height) / avgSpeed,
-						).Truncate(time.Second).String()
+						if data.lastProcessedEvent.Offset.Height >= data.lastOffset.Height {
+							processedPercent = "100.00%"
+							remainingTime = "live"
+						} else {
+							processedPercent = fmt.Sprintf("%.2f%%",
+								float32(data.lastProcessedEvent.Offset.Height)/float32(data.lastOffset.Height)*100.,
+							)
+							remainingTime = time.Duration(
+								int64(time.Second) * (data.lastOffset.Height - data.lastProcessedEvent.Offset.Height) / avgSpeed,
+							).Truncate(time.Second).String()
+						}
 					}
 					t.AppendRow(table.Row{
 						streamId,
+						data.lastProcessedEvent.Offset.Height,
 						data.lastProcessedEvent.Timestamp.Time().Format("2006-01-02 15:04:05"),
 						avgSpeed,
 						1000 * (data.messagesProcessed - data.messagesProcessedWhenLastLogged) / lastLoggedTime.Sub(data.startTime).Milliseconds(),
