@@ -77,7 +77,7 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval, streamMetad
 						streamId,
 						data.lastProcessedEvent.Timestamp.Time().Format("2006-01-02 15:04:05"),
 						avgSpeed,
-						(1000 * data.messagesProcessedWhenLastLogged) / lastLoggedTime.Sub(data.startTime).Milliseconds(),
+						1000 * (data.messagesProcessed - data.messagesProcessedWhenLastLogged) / lastLoggedTime.Sub(data.startTime).Milliseconds(),
 						processedPercent,
 						remainingTime,
 					})
