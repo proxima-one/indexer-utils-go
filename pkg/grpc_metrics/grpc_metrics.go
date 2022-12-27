@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func StartGrpcMetrics(serv *grpc.Server, port string) error {
+func ServeGrpcMetricsForServer(serv *grpc.Server, port string) error {
 	grpcPrometheus.EnableHandlingTimeHistogram()
 	grpcPrometheus.Register(serv)
 	http.Handle("/metrics", promhttp.Handler())

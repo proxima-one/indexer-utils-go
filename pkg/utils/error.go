@@ -1,4 +1,4 @@
-package panic_on_error
+package utils
 
 import "fmt"
 
