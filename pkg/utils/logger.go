@@ -132,7 +132,7 @@ func streamRowFromData(lastLoggedTime time.Time, streamId string, data *streamDa
 		data.lastProcessedEvent.Timestamp.Time().Format("2006-01-02 15:04:05"),
 		fmt.Sprintf("%.2f", avgSpeed),
 		fmt.Sprintf("%.2f", divideAsFloats(
-			1000.*data.messagesProcessed-data.messagesProcessedWhenLastLogged,
+			1000.*(data.messagesProcessed-data.messagesProcessedWhenLastLogged),
 			lastLoggedTime.Sub(data.startTime).Milliseconds(),
 		)),
 		processedPercent,
