@@ -17,11 +17,6 @@ type Logger struct {
 	streamEventsToProcess chan streamEvent
 }
 
-type streamEvent struct {
-	streamId string
-	event    proximaclient.StreamEvent
-}
-
 func NewLogger(file *os.File, findStreamFunc func(stream string) (*proximaclient.Stream, error)) *Logger {
 	return &Logger{
 		file:                  file,
@@ -30,15 +25,21 @@ func NewLogger(file *os.File, findStreamFunc func(stream string) (*proximaclient
 	}
 }
 
+type streamEvent struct {
+	streamId string
+	event    proximaclient.StreamEvent
+}
+
+type streamData struct {
+	messagesProcessed               int64
+	messagesProcessedWhenLastLogged int64
+	lastProcessedEvent              *proximaclient.StreamEvent
+	lastOffset                      *proximaclient.Offset
+	startTime                       time.Time
+}
+
 func (logger *Logger) StartLogging(ctx context.Context, logInterval, streamMetadataUpdateInterval time.Duration) {
 	go func() {
-		type streamData struct {
-			messagesProcessed               int64
-			messagesProcessedWhenLastLogged int64
-			lastProcessedEvent              *proximaclient.StreamEvent
-			lastOffset                      *proximaclient.Offset
-			startTime                       time.Time
-		}
 		streamDataById := make(map[string]*streamData)
 
 		t := table.NewWriter()
@@ -62,32 +63,7 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval, streamMetad
 				}
 				t.ResetRows()
 				for streamId, data := range streamDataById {
-					avgSpeed := (1000 * data.messagesProcessed) / time.Now().Sub(data.startTime).Milliseconds()
-					processedPercent := ""
-					remainingTime := ""
-					if data.lastOffset != nil {
-						if data.lastProcessedEvent.Offset.Height >= data.lastOffset.Height {
-							processedPercent = "100.00%"
-							remainingTime = "live"
-						} else {
-							processedPercent = fmt.Sprintf("%.2f%%",
-								float32(data.lastProcessedEvent.Offset.Height)/float32(data.lastOffset.Height)*100.,
-							)
-							remainingTime = time.Duration(
-								int64(time.Second) * (data.lastOffset.Height - data.lastProcessedEvent.Offset.Height) / avgSpeed,
-							).Truncate(time.Second).String()
-						}
-					}
-					t.AppendRow(table.Row{
-						streamId,
-						data.lastProcessedEvent.Offset.Height,
-						data.lastProcessedEvent.Timestamp.Time().Format("2006-01-02 15:04:05"),
-						avgSpeed,
-						1000 * (data.messagesProcessed - data.messagesProcessedWhenLastLogged) / lastLoggedTime.Sub(data.startTime).Milliseconds(),
-						processedPercent,
-						remainingTime,
-					})
-					data.messagesProcessedWhenLastLogged = data.messagesProcessed
+					t.AppendRow(streamRowFromData(lastLoggedTime, streamId, data))
 				}
 				lastLoggedTime = time.Now()
 				t.Render()
@@ -114,6 +90,37 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval, streamMetad
 			}
 		}
 	}()
+}
+
+func streamRowFromData(lastLoggedTime time.Time, streamId string, data *streamData) table.Row {
+	avgSpeed := (1000 * data.messagesProcessed) / time.Now().Sub(data.startTime).Milliseconds()
+	processedPercent := ""
+	remainingTime := ""
+	if data.lastOffset != nil {
+		if data.lastProcessedEvent.Offset.Height >= data.lastOffset.Height {
+			processedPercent = "100.00%"
+			remainingTime = "live"
+		} else {
+			processedPercent = fmt.Sprintf("%.2f%%",
+				float32(data.lastProcessedEvent.Offset.Height)/float32(data.lastOffset.Height)*100.,
+			)
+			if avgSpeed != 0 {
+				remainingTime = time.Duration(
+					int64(time.Second) * (data.lastOffset.Height - data.lastProcessedEvent.Offset.Height) / avgSpeed,
+				).Truncate(time.Second).String()
+			}
+		}
+	}
+	data.messagesProcessedWhenLastLogged = data.messagesProcessed
+	return table.Row{
+		streamId,
+		data.lastProcessedEvent.Offset.Height,
+		data.lastProcessedEvent.Timestamp.Time().Format("2006-01-02 15:04:05"),
+		avgSpeed,
+		1000 * (data.messagesProcessed - data.messagesProcessedWhenLastLogged) / lastLoggedTime.Sub(data.startTime).Milliseconds(),
+		processedPercent,
+		remainingTime,
+	}
 }
 
 func (logger *Logger) EventProcessed(streamId string, event proximaclient.StreamEvent) {
