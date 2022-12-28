@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/proxima-one/streamdb-client-go/pkg/proximaclient"
+	"golang.org/x/exp/constraints"
 
 	"os"
 	"time"
@@ -64,6 +65,7 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval, streamMetad
 				t.ResetRows()
 				for streamId, data := range streamDataById {
 					t.AppendRow(streamRowFromData(lastLoggedTime, streamId, data))
+					data.messagesProcessedWhenLastLogged = data.messagesProcessed
 				}
 				lastLoggedTime = time.Now()
 				t.Render()
@@ -92,32 +94,47 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval, streamMetad
 	}()
 }
 
-func streamRowFromData(lastLoggedTime time.Time, streamId string, data *streamData) table.Row {
-	avgSpeed := (1000 * data.messagesProcessed) / time.Now().Sub(data.startTime).Milliseconds()
-	processedPercent := ""
-	remainingTime := ""
-	if data.lastOffset != nil {
-		if data.lastProcessedEvent.Offset.Height >= data.lastOffset.Height {
-			processedPercent = "100.00%"
-			remainingTime = "live"
-		} else {
-			processedPercent = fmt.Sprintf("%.2f%%",
-				float32(data.lastProcessedEvent.Offset.Height)/float32(data.lastOffset.Height)*100.,
-			)
-			if avgSpeed != 0 {
-				remainingTime = time.Duration(
-					int64(time.Second) * (data.lastOffset.Height - data.lastProcessedEvent.Offset.Height) / avgSpeed,
-				).Truncate(time.Second).String()
-			}
-		}
+func divideAsFloats[T constraints.Integer](a, b T) float32 {
+	return float32(a) / float32(b)
+}
+
+func calcProcessedPercent(lastProcessedOffset, lastOffset *proximaclient.Offset) string {
+	if lastOffset == nil {
+		return ""
 	}
-	data.messagesProcessedWhenLastLogged = data.messagesProcessed
+	if lastProcessedOffset.Height >= lastOffset.Height {
+		return "100.00%"
+	}
+	return fmt.Sprintf("%.2f%%",
+		100.*divideAsFloats(lastProcessedOffset.Height, lastOffset.Height),
+	)
+}
+
+func calcRemainingTime(lastProcessedOffset, lastOffset *proximaclient.Offset, avgSpeed float32) string {
+	if lastOffset == nil {
+		return ""
+	}
+	if lastProcessedOffset.Height >= lastOffset.Height {
+		return "live"
+	}
+	return time.Duration(
+		float32(time.Second) * float32(lastOffset.Height-lastProcessedOffset.Height) / avgSpeed,
+	).Truncate(time.Second).String()
+}
+
+func streamRowFromData(lastLoggedTime time.Time, streamId string, data *streamData) table.Row {
+	avgSpeed := divideAsFloats(1000*data.messagesProcessed, time.Now().Sub(data.startTime).Milliseconds())
+	processedPercent := calcProcessedPercent(&data.lastProcessedEvent.Offset, data.lastOffset)
+	remainingTime := calcRemainingTime(&data.lastProcessedEvent.Offset, data.lastOffset, avgSpeed)
 	return table.Row{
 		streamId,
 		data.lastProcessedEvent.Offset.Height,
 		data.lastProcessedEvent.Timestamp.Time().Format("2006-01-02 15:04:05"),
-		avgSpeed,
-		1000 * (data.messagesProcessed - data.messagesProcessedWhenLastLogged) / lastLoggedTime.Sub(data.startTime).Milliseconds(),
+		fmt.Sprintf("%.2f", avgSpeed),
+		fmt.Sprintf("%.2f", divideAsFloats(
+			1000.*data.messagesProcessed-data.messagesProcessedWhenLastLogged,
+			lastLoggedTime.Sub(data.startTime).Milliseconds(),
+		)),
 		processedPercent,
 		remainingTime,
 	}
