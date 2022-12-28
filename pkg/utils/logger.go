@@ -114,10 +114,10 @@ func (logger *Logger) EventProcessed(streamId string, event proximaclient.Stream
 
 func (logger *Logger) StartLiveStreamUpdate(
 	ctx context.Context,
-	startOffset proximaclient.Offset,
+	findStream func(stream string) (*proximaclient.Stream, error),
 	streamId string,
-	timeout time.Duration,
-	findStream func(stream string) (*proximaclient.Stream, error)) {
+	startOffset proximaclient.Offset,
+	timeout time.Duration) {
 
 	t := time.NewTicker(timeout)
 	defer t.Stop()
