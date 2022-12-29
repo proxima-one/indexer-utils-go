@@ -57,7 +57,7 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval time.Duratio
 		t := table.NewWriter()
 		t.SetStyle(table.StyleRounded)
 		t.SetOutputMirror(logger.file)
-		t.AppendHeader(table.Row{"Stream id", "Height", "Current Timestamp", "Avg Speed", "Speed", "Processed", "Remaining"})
+		t.AppendHeader(table.Row{"Stream id", "Height", "Current Timestamp", "Lag", "Avg Speed", "Speed", "Processed", "Remaining"})
 
 		log := time.NewTicker(logInterval)
 		defer log.Stop()
@@ -170,6 +170,7 @@ func streamRowFromData(lastLoggedTime time.Time, streamId string, data *streamDa
 		streamId,
 		data.lastProcessedEvent.Offset.Height,
 		data.lastProcessedEvent.Timestamp.Time().Format("2006-01-02 15:04:05"),
+		time.Now().Sub(data.lastProcessedEvent.Timestamp.Time()).Truncate(time.Second).String(),
 		fmt.Sprintf("%.2f", avgSpeed),
 		fmt.Sprintf("%.2f", divideAsFloats(
 			1000.*(data.messagesProcessed-data.messagesProcessedWhenLastLogged),
