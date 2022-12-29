@@ -6,27 +6,27 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/proxima-one/streamdb-client-go/pkg/proximaclient"
 	"golang.org/x/exp/constraints"
+	"io"
 
-	"os"
 	"time"
 )
 
 type Logger struct {
-	file *os.File
+	file io.Writer
 
 	streamEventsToProcess chan streamEvent
-	streamUpdates         chan UpdateStreamRequest
+	streamUpdates         chan updateStreamRequest
 }
 
-func NewLogger(file *os.File) *Logger {
+func NewLogger(file io.Writer) *Logger {
 	return &Logger{
 		file:                  file,
 		streamEventsToProcess: make(chan streamEvent, 10),
-		streamUpdates:         make(chan UpdateStreamRequest, 1),
+		streamUpdates:         make(chan updateStreamRequest, 1),
 	}
 }
 
-type UpdateStreamRequest struct {
+type updateStreamRequest struct {
 	StreamId    string
 	FirstOffset proximaclient.Offset
 	LastOffset  proximaclient.Offset
@@ -46,8 +46,12 @@ type streamData struct {
 	startTime                       time.Time
 }
 
-func (logger *Logger) UpdateStream(request UpdateStreamRequest) {
-	logger.streamUpdates <- request
+func (logger *Logger) UpdateStream(streamId string, startOffset, endOffset proximaclient.Offset) {
+	logger.streamUpdates <- updateStreamRequest{
+		StreamId:    streamId,
+		FirstOffset: startOffset,
+		LastOffset:  endOffset,
+	}
 }
 
 func (logger *Logger) StartLogging(ctx context.Context, logInterval time.Duration) {
@@ -114,9 +118,9 @@ func (logger *Logger) EventProcessed(streamId string, event proximaclient.Stream
 
 func (logger *Logger) StartLiveStreamUpdate(
 	ctx context.Context,
-	findStream func(stream string) (*proximaclient.Stream, error),
 	streamId string,
 	startOffset proximaclient.Offset,
+	findStream func(stream string) (*proximaclient.Stream, error),
 	timeout time.Duration) {
 
 	t := time.NewTicker(timeout)
@@ -124,11 +128,7 @@ func (logger *Logger) StartLiveStreamUpdate(
 	for ctx.Err() == nil {
 		lastOffset := lastOffsetForStream(streamId, findStream)
 		if lastOffset != nil {
-			logger.UpdateStream(UpdateStreamRequest{
-				StreamId:    streamId,
-				FirstOffset: startOffset,
-				LastOffset:  *lastOffset,
-			})
+			logger.UpdateStream(streamId, startOffset, *lastOffset)
 		}
 
 		select {
