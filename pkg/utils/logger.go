@@ -74,14 +74,7 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval time.Duratio
 				return
 
 			case req := <-logger.streamUpdates: // prioritize stream updates over other channels
-				data := streamDataById[req.StreamId]
-				if data == nil {
-					data = new(streamData)
-					streamDataById[req.StreamId] = data
-					data.startTime = time.Now()
-				}
-				data.firstOffset = &req.FirstOffset
-				data.lastOffset = &req.LastOffset
+				streamDataById[req.StreamId] = updateStreamData(streamDataById[req.StreamId], &req)
 
 			default:
 				break
@@ -105,6 +98,9 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval time.Duratio
 				}
 				lastLoggedTime = time.Now()
 				t.Render()
+
+			case req := <-logger.streamUpdates:
+				streamDataById[req.StreamId] = updateStreamData(streamDataById[req.StreamId], &req)
 
 			case event := <-logger.streamEventsToProcess:
 				data := streamDataById[event.streamId]
@@ -146,6 +142,17 @@ func (logger *Logger) StartLiveStreamUpdate(
 			break
 		}
 	}
+}
+
+func updateStreamData(data *streamData, req *updateStreamRequest) *streamData {
+	res := data
+	if res == nil {
+		res = new(streamData)
+		res.startTime = time.Now()
+	}
+	res.firstOffset = &req.FirstOffset
+	res.lastOffset = &req.LastOffset
+	return res
 }
 
 func divideAsFloats[T constraints.Integer](a, b T) float32 {
