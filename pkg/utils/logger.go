@@ -73,6 +73,24 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval time.Duratio
 			case <-ctx.Done():
 				return
 
+			case req := <-logger.streamUpdates: // prioritize stream updates over other channels
+				data := streamDataById[req.StreamId]
+				if data == nil {
+					data = new(streamData)
+					streamDataById[req.StreamId] = data
+					data.startTime = time.Now()
+				}
+				data.firstOffset = &req.FirstOffset
+				data.lastOffset = &req.LastOffset
+
+			default:
+				break
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+
 			case <-log.C:
 				if len(streamDataById) == 0 {
 					continue
@@ -94,16 +112,6 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval time.Duratio
 					data.lastProcessedEvent = &event.event
 					data.messagesProcessed++
 				}
-
-			case req := <-logger.streamUpdates:
-				data := streamDataById[req.StreamId]
-				if data == nil {
-					data = new(streamData)
-					streamDataById[req.StreamId] = data
-					data.startTime = time.Now()
-				}
-				data.firstOffset = &req.FirstOffset
-				data.lastOffset = &req.LastOffset
 			}
 		}
 	}()
