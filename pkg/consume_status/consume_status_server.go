@@ -1,10 +1,10 @@
-package status_server
+package consume_status
 
 import (
 	"context"
 	"fmt"
+	pb "github.com/proxima-one/indexer-utils-go/pkg/consume_status/internal/proto"
 	"github.com/proxima-one/indexer-utils-go/pkg/grpc_gateway"
-	pb "github.com/proxima-one/indexer-utils-go/pkg/status_server/internal/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -19,17 +19,17 @@ type networkIndexingStatus struct {
 	BlockNumber string
 }
 
-type StatusServer struct {
+type ConsumeStatusServer struct {
 	states map[string]*networkIndexingStatus
 }
 
-func NewStatusServer() *StatusServer {
-	return &StatusServer{
+func NewConsumeStatusServer() *ConsumeStatusServer {
+	return &ConsumeStatusServer{
 		states: make(map[string]*networkIndexingStatus),
 	}
 }
 
-func (s *StatusServer) Start(ctx context.Context, grpcPort, httpPort int) {
+func (s *ConsumeStatusServer) Start(ctx context.Context, grpcPort, httpPort int) {
 	grpcServer := grpc.NewServer()
 	pb.RegisterStatusServiceServer(grpcServer, s)
 
@@ -53,7 +53,7 @@ func (s *StatusServer) Start(ctx context.Context, grpcPort, httpPort int) {
 	}()
 }
 
-func (s *StatusServer) UpdateNetworkIndexingStatus(network string, timestamp time.Time, blockNumber string) {
+func (s *ConsumeStatusServer) UpdateNetworkIndexingStatus(network string, timestamp time.Time, blockNumber string) {
 	if _, ok := s.states[network]; !ok {
 		s.states[network] = &networkIndexingStatus{}
 	}
@@ -62,7 +62,7 @@ func (s *StatusServer) UpdateNetworkIndexingStatus(network string, timestamp tim
 	s.states[network].BlockNumber = blockNumber
 }
 
-func (s *StatusServer) GetStatus(_ context.Context, _ *emptypb.Empty) (*pb.GetStatusResponse, error) {
+func (s *ConsumeStatusServer) GetStatus(_ context.Context, _ *emptypb.Empty) (*pb.GetStatusResponse, error) {
 	res := &pb.GetStatusResponse{Networks: make([]*pb.NetworkIndexingStatus, 0)}
 
 	for _, state := range s.states {

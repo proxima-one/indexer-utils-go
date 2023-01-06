@@ -1,4 +1,4 @@
-package consumer_metrics
+package prometheus_metrics
 
 import (
 	"context"
@@ -17,16 +17,16 @@ type eventProcessedEvent struct {
 	timestamp      time.Time
 }
 
-type IndexingServiceMetricsServer struct {
+type PrometheusMetricsServer struct {
 	processedEvents chan eventProcessedEvent
 }
 
-func NewConsumerMetricsServer() *IndexingServiceMetricsServer {
-	return new(IndexingServiceMetricsServer)
+func NewConsumerMetricsServer() *PrometheusMetricsServer {
+	return new(PrometheusMetricsServer)
 }
 
-func (cm *IndexingServiceMetricsServer) EnableConsumerMetrics(ctx context.Context) *IndexingServiceMetricsServer {
-	cm.processedEvents = make(chan eventProcessedEvent, 100)
+func (s *PrometheusMetricsServer) EnableConsumerMetrics(ctx context.Context) *PrometheusMetricsServer {
+	s.processedEvents = make(chan eventProcessedEvent, 100)
 	processingDelay := prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "",
 		Name:      "index_processing_delay",
@@ -86,7 +86,7 @@ func (cm *IndexingServiceMetricsServer) EnableConsumerMetrics(ctx context.Contex
 
 				lastUpdateTime = time.Now()
 
-			case event := <-cm.processedEvents:
+			case event := <-s.processedEvents:
 				if streams[event.streamId] == nil {
 					streams[event.streamId] = new(streamData)
 				}
@@ -99,25 +99,25 @@ func (cm *IndexingServiceMetricsServer) EnableConsumerMetrics(ctx context.Contex
 			}
 		}
 	}()
-	return cm
+	return s
 }
 
-func (cm *IndexingServiceMetricsServer) EnableServerMetrics(server *grpc.Server) *IndexingServiceMetricsServer {
+func (s *PrometheusMetricsServer) EnableServerMetrics(server *grpc.Server) *PrometheusMetricsServer {
 	grpcPrometheus.EnableHandlingTimeHistogram()
 	grpcPrometheus.Register(server)
-	return cm
+	return s
 }
 
-func (cm *IndexingServiceMetricsServer) Start(port int) error {
+func (s *PrometheusMetricsServer) Start(port int) error {
 	http.Handle("/metrics", promhttp.Handler())
 	return http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
-func (cm *IndexingServiceMetricsServer) EventProcessed(stream string, timestamp time.Time) {
-	if cm.processedEvents == nil {
-		panic("cannot use consumer metrics with server-only IndexingServiceMetricsServer")
+func (s *PrometheusMetricsServer) EventProcessed(stream string, timestamp time.Time) {
+	if s.processedEvents == nil {
+		panic("cannot use consumer metrics with server-only PrometheusMetricsServer")
 	}
-	cm.processedEvents <- eventProcessedEvent{
+	s.processedEvents <- eventProcessedEvent{
 		streamId:       stream,
 		eventTimestamp: timestamp,
 		timestamp:      time.Now(),
