@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package consumer.metrics;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/proxima-one/indexer-utils-go/pkg/status_server/internal";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    version: "1.0";
+  };
+  schemes: [HTTPS, HTTP];
+};
+
+message IndexingStatus {
+  google.protobuf.Timestamp timestamp = 1;
+  optional string block_number = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    example: '"100"'
+  }];
+}
+
+message NetworkIndexingStatus {
+  string network = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    example: '"eth-main"'
+  }];
+  IndexingStatus status = 2;
+}
+
+message GetStatusResponse {
+  repeated NetworkIndexingStatus networks = 1;
+}
+
+service StatusService {
+  rpc GetStatus(google.protobuf.Empty) returns (GetStatusResponse) {
+    option (google.api.http) = {
+      get: "/api/get_status"
+    };
+  };
+}

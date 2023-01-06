@@ -9,7 +9,9 @@ require (
 	github.com/prometheus/client_golang v1.12.2
 	github.com/proxima-one/streamdb-client-go v1.0.1
 	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15
+	google.golang.org/genproto v0.0.0-20220719170305-83ca9fad585f
 	google.golang.org/grpc v1.51.0
+	google.golang.org/protobuf v1.28.1
 )
 
 require (
@@ -28,6 +30,4 @@ require (
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
 	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
-	google.golang.org/genproto v0.0.0-20220719170305-83ca9fad585f // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
 )

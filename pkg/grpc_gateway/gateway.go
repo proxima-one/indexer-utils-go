@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"google.golang.org/grpc/credentials/insecure"
 	"io/fs"
-	"log"
 	"mime"
 	"net/http"
 	"strings"
@@ -38,11 +37,11 @@ func getProtoFileHandler(folder fs.FS) http.Handler {
 }
 
 // Run runs the gRPC-Gateway, dialling the provided address.
-func Run(grpcAddress, port, protoFileName string, protoFileFolder fs.FS,
+func Run(ctx context.Context, grpcAddress string, httpPort int, protoFileFolder fs.FS, protoFileName string,
 	registerServiceHandler func(context.Context, *runtime.ServeMux, *grpc.ClientConn) error) error {
 
 	conn, err := grpc.DialContext(
-		context.Background(),
+		ctx,
 		grpcAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
@@ -52,7 +51,7 @@ func Run(grpcAddress, port, protoFileName string, protoFileFolder fs.FS,
 	}
 
 	gwmux := runtime.NewServeMux()
-	err = registerServiceHandler(context.Background(), gwmux, conn)
+	err = registerServiceHandler(ctx, gwmux, conn)
 	if err != nil {
 		return fmt.Errorf("failed to register openapi: %w", err)
 	}
@@ -60,7 +59,7 @@ func Run(grpcAddress, port, protoFileName string, protoFileFolder fs.FS,
 	openAPIHandler := getOpenAPIHandler()
 	protoFileHandler := getProtoFileHandler(protoFileFolder)
 
-	gatewayAddr := "0.0.0.0:" + port
+	gatewayAddr := fmt.Sprintf("0.0.0.0:%d", httpPort)
 	gwServer := &http.Server{
 		Addr: gatewayAddr,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -76,6 +75,5 @@ func Run(grpcAddress, port, protoFileName string, protoFileFolder fs.FS,
 		}),
 	}
 
-	log.Println("Serving gRPC-Gateway and OpenAPI Documentation on http://", gatewayAddr)
 	return fmt.Errorf("serving gRPC-Gateway server error: %w", gwServer.ListenAndServe())
 }
