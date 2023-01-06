@@ -17,7 +17,7 @@ func main() {
 		}
 	}()
 	go func() {
-		metrics := prometheus_metrics.NewConsumerMetricsServer().EnableConsumerMetrics(context.Background())
+		metrics := prometheus_metrics.NewPrometheusMetricsServer().EnableConsumerMetrics(context.Background())
 		go metrics.Start(12228)
 		for {
 			metrics.EventProcessed("net1", time.Unix(time.Now().Unix()-100, 0))

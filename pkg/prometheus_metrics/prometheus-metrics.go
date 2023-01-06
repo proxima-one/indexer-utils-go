@@ -21,7 +21,7 @@ type PrometheusMetricsServer struct {
 	processedEvents chan eventProcessedEvent
 }
 
-func NewConsumerMetricsServer() *PrometheusMetricsServer {
+func NewPrometheusMetricsServer() *PrometheusMetricsServer {
 	return new(PrometheusMetricsServer)
 }
 
