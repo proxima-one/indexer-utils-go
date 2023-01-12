@@ -11,7 +11,15 @@ func main() {
 	go func() {
 		serv := consume_status.NewConsumeStatusServer()
 		serv.Start(context.Background(), 27000, 8080)
-		serv.UpdateNetworkIndexingStatus("test", time.Now(), "1")
+		serv.RegisterStream("eth-main-0", "eth-main")
+		serv.RegisterStream("eth-main-1", "eth-main")
+		serv.RegisterStream("polygon-mumbai-0", "polygon-mumbai")
+		serv.RegisterStream("polygon-mumbai-1", "polygon-mumbai")
+
+		serv.UpdateStreamStatus("eth-main-0", time.Unix(time.Now().Unix()-1000000, 0), "100")
+		serv.UpdateStreamStatus("eth-main-1", time.Unix(time.Now().Unix(), 0), "200")
+		serv.UpdateStreamStatus("polygon-mumbai-0", time.Unix(time.Now().Unix()-1200000, 0), "110")
+		serv.UpdateStreamStatus("polygon-mumbai-1", time.Unix(time.Now().Unix()-100, 0), "250")
 		for {
 			time.Sleep(time.Second)
 		}

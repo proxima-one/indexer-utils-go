@@ -26,3 +26,9 @@ func StringToBigInt(str string) *big.Int {
 func StringToInt64(s string) (int64, error) {
 	return strconv.ParseInt(s, 10, 64)
 }
+
+func MustConvStrToInt64(s string) int64 {
+	res, err := strconv.ParseInt(s, 10, 64)
+	PanicOnError(err)
+	return res
+}

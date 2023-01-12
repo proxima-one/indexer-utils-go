@@ -130,9 +130,9 @@ func (logger *Logger) StartLiveStreamUpdate(
 	streamId string,
 	startOffset proximaclient.Offset,
 	findStream func(stream string) (*proximaclient.Stream, error),
-	timeout time.Duration) {
+	interval time.Duration) {
 
-	t := time.NewTicker(timeout)
+	t := time.NewTicker(interval)
 	defer t.Stop()
 	for ctx.Err() == nil {
 		lastOffset := lastOffsetForStream(streamId, findStream)

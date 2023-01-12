@@ -5,27 +5,31 @@ import (
 	"fmt"
 	pb "github.com/proxima-one/indexer-utils-go/pkg/consume_status/internal/proto"
 	"github.com/proxima-one/indexer-utils-go/pkg/grpc_gateway"
+	"github.com/proxima-one/indexer-utils-go/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"log"
 	"net"
+	"sync"
 	"time"
 )
 
-type networkIndexingStatus struct {
-	Network     string
+type indexingStatus struct {
 	Timestamp   time.Time
 	BlockNumber string
 }
 
 type ConsumeStatusServer struct {
-	states map[string]*networkIndexingStatus
+	mu                sync.RWMutex
+	statusByStreamId  map[string]indexingStatus
+	networkByStreamId map[string]string
 }
 
 func NewConsumeStatusServer() *ConsumeStatusServer {
 	return &ConsumeStatusServer{
-		states: make(map[string]*networkIndexingStatus),
+		statusByStreamId:  make(map[string]indexingStatus),
+		networkByStreamId: make(map[string]string),
 	}
 }
 
@@ -53,24 +57,56 @@ func (s *ConsumeStatusServer) Start(ctx context.Context, grpcPort, httpPort int)
 	}()
 }
 
-func (s *ConsumeStatusServer) UpdateNetworkIndexingStatus(network string, timestamp time.Time, blockNumber string) {
-	if _, ok := s.states[network]; !ok {
-		s.states[network] = &networkIndexingStatus{}
+func (s *ConsumeStatusServer) RegisterStream(streamId, network string) {
+	s.mu.Lock()
+	s.networkByStreamId[streamId] = network
+	s.mu.Unlock()
+}
+
+// UpdateStreamStatus updates stream status of a stream. Stream must be already registered
+func (s *ConsumeStatusServer) UpdateStreamStatus(streamId string, timestamp time.Time, blockNumber string) {
+	s.mu.RLock()
+	if _, ok := s.networkByStreamId[streamId]; !ok {
+		s.mu.RUnlock()
+		utils.PanicOnError(fmt.Errorf("stream %s is not registered", streamId))
 	}
-	s.states[network].Network = network
-	s.states[network].Timestamp = timestamp
-	s.states[network].BlockNumber = blockNumber
+	s.mu.RUnlock()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.statusByStreamId[streamId] = indexingStatus{
+		Timestamp:   timestamp,
+		BlockNumber: blockNumber,
+	}
 }
 
 func (s *ConsumeStatusServer) GetStatus(_ context.Context, _ *emptypb.Empty) (*pb.GetStatusResponse, error) {
-	res := &pb.GetStatusResponse{Networks: make([]*pb.NetworkIndexingStatus, 0)}
+	s.mu.RLock()
+	networkStatuses := make(map[string]*indexingStatus)
+	for streamId, streamStatus := range s.statusByStreamId {
+		network := s.networkByStreamId[streamId]
+		if _, ok := networkStatuses[network]; !ok {
+			networkStatuses[network] = &indexingStatus{
+				Timestamp:   streamStatus.Timestamp,
+				BlockNumber: streamStatus.BlockNumber,
+			}
+		} else {
+			networkStatus := networkStatuses[network]
+			if utils.MustConvStrToInt64(streamStatus.BlockNumber) < utils.MustConvStrToInt64(networkStatus.BlockNumber) {
+				networkStatus.Timestamp = streamStatus.Timestamp
+				networkStatus.BlockNumber = streamStatus.BlockNumber
+			}
+		}
+	}
+	s.mu.RUnlock()
 
-	for _, state := range s.states {
+	res := &pb.GetStatusResponse{Networks: make([]*pb.NetworkIndexingStatus, 0)}
+	for network, status := range networkStatuses {
 		res.Networks = append(res.Networks, &pb.NetworkIndexingStatus{
-			Network: state.Network,
+			Network: network,
 			Status: &pb.IndexingStatus{
-				Timestamp:   timestamppb.New(state.Timestamp),
-				BlockNumber: &state.BlockNumber,
+				Timestamp:   timestamppb.New(status.Timestamp),
+				BlockNumber: &status.BlockNumber,
 			},
 		})
 	}
