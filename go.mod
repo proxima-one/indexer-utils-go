@@ -1,4 +1,4 @@
-module github.com/proxima-one/indexer-utils-go
+module github.com/proxima-one/indexer-utils-go/v2
 
 go 1.18
 

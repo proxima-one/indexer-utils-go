@@ -3,9 +3,9 @@ package consume_status
 import (
 	"context"
 	"fmt"
-	pb "github.com/proxima-one/indexer-utils-go/pkg/consume_status/internal/proto"
-	"github.com/proxima-one/indexer-utils-go/pkg/grpc_gateway"
-	"github.com/proxima-one/indexer-utils-go/pkg/utils"
+	pb "github.com/proxima-one/indexer-utils-go/v2/pkg/consume_status/internal/proto"
+	"github.com/proxima-one/indexer-utils-go/v2/pkg/grpc_gateway"
+	"github.com/proxima-one/indexer-utils-go/v2/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"

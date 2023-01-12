@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/proxima-one/indexer-utils-go/pkg/utils"
+	"github.com/proxima-one/indexer-utils-go/v2/pkg/utils"
 	"github.com/proxima-one/streamdb-client-go/pkg/proximaclient"
 	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/slices"

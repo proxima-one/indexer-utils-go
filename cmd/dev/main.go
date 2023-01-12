@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"github.com/proxima-one/indexer-utils-go/pkg/consume_status"
-	"github.com/proxima-one/indexer-utils-go/pkg/prometheus_metrics"
+	"github.com/proxima-one/indexer-utils-go/v2/pkg/consume_status"
+	"github.com/proxima-one/indexer-utils-go/v2/pkg/prometheus_metrics"
 	"time"
 )
 
