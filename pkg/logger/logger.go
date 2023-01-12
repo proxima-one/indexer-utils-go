@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/proxima-one/indexer-utils-go/pkg/utils"
 	"github.com/proxima-one/streamdb-client-go/pkg/proximaclient"
 	"golang.org/x/exp/constraints"
+	"golang.org/x/exp/slices"
 	"io"
 
 	"time"
@@ -89,7 +91,10 @@ func (logger *Logger) StartLogging(ctx context.Context, logInterval time.Duratio
 					continue
 				}
 				t.ResetRows()
-				for streamId, data := range streamDataById {
+				streamIds := utils.MapKeys(streamDataById)
+				slices.Sort(streamIds)
+				for _, streamId := range streamIds {
+					data := streamDataById[streamId]
 					if data.firstOffset == nil || data.lastOffset == nil || data.lastProcessedEvent == nil {
 						continue
 					}

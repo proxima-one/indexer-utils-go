@@ -33,9 +33,21 @@ func FilterArray[A any](arr []A, fun func(A) bool) (res []A) {
 }
 
 func MapToSlice[K comparable, V any](m map[K]V) []V {
-	res := make([]V, 0, len(m))
+	res := make([]V, len(m))
+	i := 0
 	for _, val := range m {
-		res = append(res, val)
+		res[i] = val
+		i++
+	}
+	return res
+}
+
+func MapKeys[K comparable, V any](m map[K]V) []K {
+	res := make([]K, len(m))
+	i := 0
+	for key := range m {
+		res[i] = key
+		i++
 	}
 	return res
 }
