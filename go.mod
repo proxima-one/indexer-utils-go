@@ -7,7 +7,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.0
 	github.com/jedib0t/go-pretty/v6 v6.4.3
 	github.com/prometheus/client_golang v1.12.2
-	github.com/proxima-one/streamdb-client-go v1.0.1
+	github.com/proxima-one/streamdb-client-go/v2 v2.0.2
 	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15
 	google.golang.org/genproto v0.0.0-20220719170305-83ca9fad585f
 	google.golang.org/grpc v1.51.0

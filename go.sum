@@ -195,8 +195,8 @@ github.com/prometheus/procfs v0.1.3/go.mod h1:lV6e/gmhEcM9IjHGsFOCxxuZ+z1YqCvr4O
 github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
 github.com/prometheus/procfs v0.7.3 h1:4jVXhlkAyzOScmCkXBTOLRLTz8EeU+eyjrwB/EPq0VU=
 github.com/prometheus/procfs v0.7.3/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
-github.com/proxima-one/streamdb-client-go v1.0.1 h1:DQM3kg4AyhogwUtLQpqhiE8f98sJJN7Eembqa3ZlUBA=
-github.com/proxima-one/streamdb-client-go v1.0.1/go.mod h1:QmpS1h5D5OYAz3Cg4CFqwKFtZ5Vj5dGskg0m4U+aElI=
+github.com/proxima-one/streamdb-client-go/v2 v2.0.2 h1:j/2mobZDcm6mSNyLC309+Q9NSe9TmBtOaAdF1HmccJM=
+github.com/proxima-one/streamdb-client-go/v2 v2.0.2/go.mod h1:YnUy/Met0OzwjxEEQ9Tpx4v7jLULKBa/b0wjQUv5Hn4=
 github.com/rivo/uniseg v0.2.0 h1:S1pD9weZBuJdFmowNwbpi7BJ8TNftyUImj/0WQi72jY=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
