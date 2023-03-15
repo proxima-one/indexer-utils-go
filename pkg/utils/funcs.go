@@ -51,3 +51,12 @@ func MapKeys[K comparable, V any](m map[K]V) []K {
 	}
 	return res
 }
+
+func SliceContains[T comparable](s []T, e T) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
